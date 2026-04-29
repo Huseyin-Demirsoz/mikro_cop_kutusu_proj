@@ -1,12 +1,16 @@
 
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include <HCSR04.h>
 
-const char* ssid = "TURKSAT-KABLONET-A002-2.4G";
-const char* password = "dced5260";
+
+UltraSonicDistanceSensor distanceSensor(5,18);
+
+const char* ssid = "readme note on iki puro";
+const char* password = "yonganma";
 
 //Your Domain name with URL path or IP address with path
-String serverName = "http://192.168.0.19:8080/";
+String serverName = "http://10.200.132.232:8080/";
 
 // the following variables are unsigned longs because the time, measured in
 // milliseconds, will quickly become a bigger number than can be stored in an int.
@@ -17,7 +21,7 @@ unsigned long lastTime = 0;
 unsigned long timerDelay = 5000;
 
 void setup() {
-  Serial.begin(115200); 
+  Serial.begin(9600); 
 
   WiFi.begin(ssid, password);
   Serial.println("Connecting");
@@ -38,11 +42,9 @@ void loop() {
     //Check WiFi connection status
     if(WiFi.status()== WL_CONNECTED){
       HTTPClient http;
-
-      String serverPath = serverName;
       
       // Your Domain name with URL path or IP address with path
-      http.begin(serverPath.c_str());
+      http.begin(serverName.c_str());
       
       // If you need Node-RED/server authentication, insert user and password below
       //http.setAuthorization("REPLACE_WITH_SERVER_USERNAME", "REPLACE_WITH_SERVER_PASSWORD");

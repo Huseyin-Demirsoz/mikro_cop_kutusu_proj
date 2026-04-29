@@ -1,7 +1,7 @@
 //ultrasonic sensor HC-SR04
 #include <HCSR04.h>
 
-UltraSonicDistanceSensor distanceSensor(5,18);  // Initialize sensor that uses digital pins 13 and 12.
+UltraSonicDistanceSensor distanceSensor(5, 18);  // Initialize sensor that uses digital pins 13 and 12.
 
 void setup () {
     Serial.begin(9600);  // We initialize serial connection so that we could print values from sensor.
@@ -9,7 +9,9 @@ void setup () {
 
 void loop () {
     // Every 500 miliseconds, do a measurement using the sensor and print the distance in centimeters.
-    Serial.println(distanceSensor.measureDistanceCm());
+    float percentage = (1-((distanceSensor.measureDistanceCm()-5.5)/17.5))
+    *100;
+    Serial.println(percentage);
     delay(500);
 }
 //HTTP client kodu
