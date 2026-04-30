@@ -6,11 +6,13 @@
 
 UltraSonicDistanceSensor distanceSensor(5,18);
 
-const char* ssid = "readme note on iki puro";
-const char* password = "yonganma";
+//const char* ssid = "readme note on iki puro";
+//const char* password = "yonganma";
+const char* ssid = "TURKSAT-KABLONET-A002-2.4G";
+const char* password = "dced5260";
 
 //Your Domain name with URL path or IP address with path
-String serverName = "http://10.200.132.232:8080/";
+String serverName = "http://192.168.0.19:8080/";
 
 // the following variables are unsigned longs because the time, measured in
 // milliseconds, will quickly become a bigger number than can be stored in an int.
@@ -21,7 +23,7 @@ unsigned long lastTime = 0;
 unsigned long timerDelay = 5000;
 
 void setup() {
-  Serial.begin(9600); 
+  Serial.begin(115200); 
 
   WiFi.begin(ssid, password);
   Serial.println("Connecting");

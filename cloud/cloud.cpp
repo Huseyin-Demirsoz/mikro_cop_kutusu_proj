@@ -1,5 +1,6 @@
 #include <cmath>
 #include <iostream>
+#include <shared_mutex>
 #include <sqlite3.h>
 #include <string>
 #include "httplib.h"
@@ -42,9 +43,9 @@ std::string get_local_ip(){
 		}
 		else{
 			if(((std::string)ifa->ifa_name) == "wlan0"){
+				printf("%s: %s\n", ifa->ifa_name, buf);
 				return buf;
 			}
-			printf("%s: %s\n", ifa->ifa_name, buf);
 		}
 	}
 
@@ -53,6 +54,37 @@ std::string get_local_ip(){
 }
 
 int main(int argc, char *argv[]){
+	sqlite3* DB;
+	{//boş sql işlemleri için blok
+	std::string user="CREATE TABLE IF NOT EXISTS users("
+					"yuzde INT NOT NULL ,
+					"");";
+	
+	std::string post="CREATE TABLE IF NOT EXISTS users("
+					"postid INT PRIMARY KEY NOT NULL, "
+					"FOREIGN KEY(posterid) REFERENCES user(id)"
+					"konum TEXT"
+					"time INT"get_local_ip
+					"message TEXT);";
+	int exit = 0;
+	exit = sqlite3_open("example.db", &DB);
+	char* messaggeError;
+	exit = sqlite3_exec(DB, user.c_str(), NULL, 0, &messaggeError);
+
+	if (exit != SQLITE_OK) {
+		// TODO handle error
+	}
+	else{
+		std::cout << "Table user created Successfully" << std::endl;
+		exit = sqlite3_exec(DB, post.c_str(), NULL, 0, &messaggeError);
+		if (exit != SQLITE_OK) {
+			// TODO handle error
+		}
+		else{
+			std::cout << "Table listing created Successfully" << std::endl;
+		}
+	}
+	}
 	httplib::Server svr;
 	char szBuffer[1024];
 	svr.set_error_logger([](const httplib::Error& err, const httplib::Request* req) {
@@ -66,8 +98,9 @@ int main(int argc, char *argv[]){
 	/*svr.Post("/sensor/", [&](const httplib::Request &req, httplib::Response &res) {
 		res.set_content("server", "text/html");
 	});*/
-	std::cout << get_local_ip();
-	if(svr.listen("10.200.132.232", 8080)){
+	std::string ip = get_local_ip();
+	std::cout << ip << "\n";
+	if(svr.listen(ip, 8080)){
 		std::cout << true;
 	}else {
 		std::cout << false;
