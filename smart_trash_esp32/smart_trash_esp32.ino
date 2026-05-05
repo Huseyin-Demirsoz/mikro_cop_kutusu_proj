@@ -31,11 +31,11 @@
 // =========================
 // Network configuration
 // =========================
-const char* WIFI_SSID = "YOUR_WIFI_NAME";
-const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
+const char* WIFI_SSID = "readme note on iki puro";
+const char* WIFI_PASSWORD = "jonganma";
 
 // Change the IP address to the PC/server running server.cpp
-const char* API_URL = "http://192.168.1.100:8080/api/trash";
+const char* API_URL = "http://10.200.132.232:8080/api/trash";
 
 // =========================
 // Device configuration
@@ -583,7 +583,7 @@ void setup() {
 
 void loop() {
   ensureWiFi();
-  handleKeypad();
+  //handleKeypad();
 
   unsigned long now = millis();
 
@@ -594,7 +594,7 @@ void loop() {
 
   if (now - lastLcdMs >= LCD_INTERVAL_MS) {
     lastLcdMs = now;
-    updateLCD();
+    //updateLCD();
   }
 
   if (now - lastPostMs >= POST_INTERVAL_MS) {

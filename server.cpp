@@ -66,23 +66,6 @@ std::string columnText(sqlite3_stmt* stmt, int col) {
     return text ? reinterpret_cast<const char*>(text) : "";
 }
 
-std::string readFile(const std::string& path) {
-    std::ifstream file(path, std::ios::binary);
-
-    if (!file) {
-        return "";
-    }
-
-    std::ostringstream ss;
-    ss << file.rdbuf();
-
-    return ss.str();
-}
-
-bool fileExists(const std::string& path) {
-    std::ifstream f(path);
-    return f.good();
-}
 
 std::string shellQuote(const std::string& value) {
     std::string out = "\"";
@@ -148,21 +131,8 @@ std::string toStringParam(const httplib::Request& req, const std::string& name, 
     return req.has_param(name) ? req.get_param_value(name) : defaultValue;
 }
 
-std::string evaluateStatus(int fill, int gas, int gasDo) {
-    if (fill >= FILL_ALARM || gas >= GAS_ALARM || gasDo != 0) {
-        return "ALARM";
-    }
 
-    if (fill >= FILL_WARNING || gas >= GAS_WARNING) {
-        return "WARNING";
-    }
-
-    return "NORMAL";
-}
-
-// =========================
-// Database
-// =========================
+// Database'i başlatan kısım mainden ayırmak için buraya aldık.
 bool initDatabase() {
     std::lock_guard<std::mutex> lock(dbMutex);
 
@@ -239,6 +209,7 @@ bool initDatabase() {
     return ok;
 }
 
+// Bu kısım da formatlayıp database e atmak için ama uzun diye buraya aldık
 long long insertTrashRecord(
     const std::string& deviceId,
     int fill,
@@ -358,27 +329,6 @@ long long insertNotificationEvent(
 
     return id;
 }
-
-// =========================
-// Notification hook
-// =========================
-bool runNotificationHook(const std::string& level, const std::string& title, const std::string& message) {
-#ifdef _WIN32
-    const std::string hook = "notify_hook.bat";
-#else
-    const std::string hook = "./notify_hook.sh";
-#endif
-
-    if (!fileExists(hook)) {
-        return false;
-    }
-
-    std::string cmd = hook + " " + shellQuote(level) + " " + shellQuote(title) + " " + shellQuote(message);
-    int rc = std::system(cmd.c_str());
-
-    return rc == 0;
-}
-
 bool shouldCreateExternalNotification(const std::string& level) {
     if (level != "WARNING" && level != "ALARM") {
         return false;
@@ -439,8 +389,20 @@ void handleNotificationIfNeeded(
 
     // External notification hook with cooldown
     if (shouldCreateExternalNotification(level)) {
-        bool delivered = runNotificationHook(level, title, message);
-        insertNotificationEvent(level, title, message, "external_hook", delivered ? 1 : 0);
+#ifdef _WIN32
+    const std::string hook = "notify_hook.bat";
+#else
+    const std::string hook = "./notify_hook.sh";
+#endif
+        // hook'un düzgün olduğuna bakıyor
+        std::ifstream f(hook);
+        if (f.good()) {
+            return false;
+        }
+        
+        std::string cmd = hook + " " + shellQuote(level) + " " + shellQuote(title) + " " + shellQuote(message);
+        int rc = std::system(cmd.c_str());
+        insertNotificationEvent(level, title, message, "external_hook", rc ? 1 : 0);
     }
 }
 
@@ -470,7 +432,55 @@ std::string rowToJson(sqlite3_stmt* stmt) {
 
     return json.str();
 }
+/*
+std::string get_local_ip(){
+	struct ifaddrs *myaddrs, *ifa;
+	void *in_addr;
+	char buf[64];
+	std::string ip;
+	if(getifaddrs(&myaddrs) != 0){
+		perror("getifaddrs");
+		exit(1);
+	}
 
+	for (ifa = myaddrs; ifa != NULL; ifa = ifa->ifa_next){
+		if (ifa->ifa_addr == NULL)
+			continue;
+		if (!(ifa->ifa_flags & IFF_UP))
+			continue;
+
+		switch (ifa->ifa_addr->sa_family){
+			case AF_INET:{
+				struct sockaddr_in *s4 = (struct sockaddr_in *)ifa->ifa_addr;
+				in_addr = &s4->sin_addr;
+				break;
+			}
+
+			case AF_INET6:{
+				struct sockaddr_in6 *s6 = (struct sockaddr_in6 *)ifa->ifa_addr;
+				in_addr = &s6->sin6_addr;
+				break;
+			}
+
+			default:
+				continue;
+		}
+
+		if (!inet_ntop(ifa->ifa_addr->sa_family, in_addr, buf, sizeof(buf))){
+			printf("%s: inet_ntop failed!\n", ifa->ifa_name);
+		}
+		else{
+			if(((std::string)ifa->ifa_name) == "wlan0"){
+				printf("%s: %s\n", ifa->ifa_name, buf);
+				return buf;
+			}
+		}
+	}
+
+	freeifaddrs(myaddrs);
+	return ip;
+}
+*/
 std::string getLiveJson() {
     std::lock_guard<std::mutex> lock(dbMutex);
 
@@ -779,7 +789,13 @@ int main() {
     });
 
     server.Get("/", [&](const httplib::Request&, httplib::Response& res) {
-        std::string html = readFile("./public/index.html");
+        std::ifstream file("./public/index.html", std::ios::binary);
+        if (!file) {
+            // TODO handle error
+        }
+        std::ostringstream ss;
+        ss << file.rdbuf();
+        std::string html = ss.str();
 
         if (html.empty()) {
             res.status = 404;
@@ -825,7 +841,13 @@ int main() {
 
             std::string status = toStringParam(req, "status", "");
             if (status.empty()) {
-                status = evaluateStatus(fill, gas, gasDo);
+                status = "NORMAL";
+                if (fill >= FILL_WARNING || gas >= GAS_WARNING) {
+                    status = "WARNING";
+                }
+                if (fill >= FILL_ALARM || gas >= GAS_ALARM || gasDo != 0) {
+                    status = "ALARM";
+                }
             }
 
             long long id = insertTrashRecord(
@@ -941,7 +963,8 @@ int main() {
     std::cout << "History   : http://localhost:" << SERVER_PORT << "/api/history?limit=100" << std::endl;
     std::cout << "Stats     : http://localhost:" << SERVER_PORT << "/api/stats" << std::endl;
     std::cout << "Export    : http://localhost:" << SERVER_PORT << "/api/export.csv" << std::endl;
-
+    //std::string ip = get_local_ip();
+    //std::cout << ip <<"\n";
     server.listen("0.0.0.0", SERVER_PORT);
 
     return 0;
