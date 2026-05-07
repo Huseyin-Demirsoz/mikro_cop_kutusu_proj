@@ -805,6 +805,40 @@ int main() {
 
         res.set_content(html, "text/html; charset=utf-8");
     });
+    server.Get("/style.css", [&](const httplib::Request&, httplib::Response& res) {
+        std::ifstream file("./public/style.css", std::ios::binary);
+        if (!file) {
+            // TODO handle error
+        }
+        std::ostringstream ss;
+        ss << file.rdbuf();
+        std::string html = ss.str();
+
+        if (html.empty()) {
+            res.status = 404;
+            res.set_content("public/style.css not found.", "text/plain; charset=utf-8");
+            return;
+        }
+
+        res.set_content(html, "text/css; charset=utf-8");
+    });
+    server.Get("/app.js", [&](const httplib::Request&, httplib::Response& res) {
+        std::ifstream file("./public/app.js", std::ios::binary);
+        if (!file) {
+            // TODO handle error
+        }
+        std::ostringstream ss;
+        ss << file.rdbuf();
+        std::string html = ss.str();
+
+        if (html.empty()) {
+            res.status = 404;
+            res.set_content("public/app.js not found.", "text/plain; charset=utf-8");
+            return;
+        }
+
+        res.set_content(html, "application/javascript; charset=utf-8");
+    });
 
     server.Get("/health", [&](const httplib::Request&, httplib::Response& res) {
         setCors(res);

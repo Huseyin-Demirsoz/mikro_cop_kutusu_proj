@@ -28,6 +28,9 @@
 #include <Keypad.h>
 #include <Preferences.h>
 
+#include <HCSR04.h>
+UltraSonicDistanceSensor distanceSensor(5, 18);
+
 // =========================
 // Network configuration
 // =========================
@@ -244,12 +247,11 @@ float readUltrasonicDistanceAverage(byte sampleCount = 5) {
   int valid = 0;
 
   for (byte i = 0; i < sampleCount; i++) {
-    float d = readUltrasonicDistanceOnce();
-    if (d > 0 && d < 400) {
-      total += d;
-      valid++;
-    }
-    delay(40);
+    float d = distanceSensor.measureDistanceCm();
+    total += d;
+    valid++;
+
+    delay(400);
   }
 
   if (valid == 0) {
@@ -257,22 +259,6 @@ float readUltrasonicDistanceAverage(byte sampleCount = 5) {
   }
 
   return total / valid;
-}
-
-int calculateFillPercent(float distance) {
-  if (distance < 0) {
-    return fillPercent; // keep last valid value if sensor fails
-  }
-
-  float denominator = emptyDistanceCm - fullDistanceCm;
-  if (denominator <= 0.5) {
-    return 0;
-  }
-
-  float ratio = (emptyDistanceCm - distance) / denominator;
-  int percent = round(ratio * 100.0);
-
-  return clampInt(percent, 0, 100);
 }
 
 int readGasAverage(byte sampleCount = 10) {
@@ -310,7 +296,7 @@ String evaluateStatus(int fill, int gas, bool gasDo) {
 
 void readSensors() {
   distanceCm = readUltrasonicDistanceAverage();
-  fillPercent = calculateFillPercent(distanceCm);
+  fillPercent = (1-((distanceCm-5.5)/17.5))*100;
 
   gasRaw = readGasAverage();
   gasVoltage = (gasRaw / 4095.0) * 3.3;
@@ -594,7 +580,7 @@ void loop() {
 
   if (now - lastLcdMs >= LCD_INTERVAL_MS) {
     lastLcdMs = now;
-    //updateLCD();
+    updateLCD();
   }
 
   if (now - lastPostMs >= POST_INTERVAL_MS) {

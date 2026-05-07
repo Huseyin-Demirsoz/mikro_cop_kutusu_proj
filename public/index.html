@@ -1,697 +1,156 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Akıllı Çöp Kutusu Dashboard</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-
-<style>
-  :root {
-    --bg: #0d1117;
-    --card: #161b22;
-    --card2: #0f1624;
-    --border: #30363d;
-    --text: #e6edf3;
-    --muted: #8b949e;
-    --blue: #58a6ff;
-    --green: #2ed573;
-    --yellow: #ffa502;
-    --red: #ff4757;
-    --purple: #a371f7;
-  }
-
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-
-  body {
-    background:
-      radial-gradient(circle at top left, rgba(88,166,255,0.12), transparent 32rem),
-      radial-gradient(circle at bottom right, rgba(163,113,247,0.10), transparent 30rem),
-      var(--bg);
-    color: var(--text);
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    padding: 20px;
-    min-height: 100vh;
-  }
-
-  header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 14px;
-    flex-wrap: wrap;
-    margin-bottom: 18px;
-  }
-
-  h1 {
-    font-size: 1.55rem;
-    letter-spacing: -0.02em;
-  }
-
-  h1 span {
-    color: var(--blue);
-  }
-
-  .toolbar {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    flex-wrap: wrap;
-  }
-
-  .badge, button, a.btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    padding: 8px 13px;
-    font-size: 13px;
-    color: var(--muted);
-    background: rgba(22,27,34,0.78);
-    backdrop-filter: blur(10px);
-    text-decoration: none;
-  }
-
-  button, a.btn {
-    cursor: pointer;
-    color: var(--text);
-  }
-
-  button:hover, a.btn:hover {
-    border-color: var(--blue);
-  }
-
-  .dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--yellow);
-  }
-
-  .banner {
-    background: rgba(22,27,34,0.86);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 16px;
-    text-align: center;
-    font-weight: 800;
-    margin-bottom: 16px;
-    box-shadow: 0 12px 30px rgba(0,0,0,0.18);
-  }
-
-  .grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-    margin-bottom: 14px;
-  }
-
-  @media (max-width: 760px) {
-    .grid {
-      grid-template-columns: 1fr;
-    }
-  }
-
-  .card, .chart-card, .notifications {
-    background: rgba(22,27,34,0.86);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 18px;
-    box-shadow: 0 12px 30px rgba(0,0,0,0.18);
-  }
-
-  .label {
-    color: var(--muted);
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 10px;
-  }
-
-  .big {
-    font-size: 3.1rem;
-    line-height: 1;
-    font-weight: 900;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  }
-
-  .sub {
-    color: var(--muted);
-    font-size: 13px;
-    margin-top: 8px;
-  }
-
-  .bar-track {
-    width: 100%;
-    height: 10px;
-    border-radius: 999px;
-    background: #21262d;
-    overflow: hidden;
-    margin-top: 12px;
-  }
-
-  .bar-fill {
-    height: 100%;
-    width: 0%;
-    border-radius: 999px;
-    transition: width 0.35s ease, background 0.35s ease;
-  }
-
-  .stats {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 10px;
-    margin-bottom: 14px;
-  }
-
-  @media (max-width: 1020px) {
-    .stats {
-      grid-template-columns: repeat(3, 1fr);
-    }
-  }
-
-  @media (max-width: 650px) {
-    .stats {
-      grid-template-columns: repeat(2, 1fr);
-    }
-  }
-
-  .stat-box {
-    background: rgba(15,22,36,0.82);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 14px;
-    text-align: center;
-  }
-
-  .stat-value {
-    font-size: 1.45rem;
-    color: var(--blue);
-    font-weight: 900;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  }
-
-  .stat-label {
-    color: var(--muted);
-    font-size: 12px;
-    margin-top: 4px;
-  }
-
-  .chart-card, .notifications {
-    margin-bottom: 14px;
-  }
-
-  .chart-card h2, .notifications h2 {
-    color: var(--muted);
-    font-size: 13px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 14px;
-  }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 12px;
-    font-size: 13px;
-  }
-
-  th, td {
-    padding: 10px;
-    border-bottom: 1px solid var(--border);
-    text-align: left;
-    vertical-align: top;
-  }
-
-  th {
-    color: var(--muted);
-    font-weight: 700;
-  }
-
-  .notification-list {
-    display: grid;
-    gap: 8px;
-  }
-
-  .notification-item {
-    background: rgba(15,22,36,0.82);
-    border: 1px solid var(--border);
-    border-left: 4px solid var(--blue);
-    border-radius: 12px;
-    padding: 10px 12px;
-  }
-
-  .notification-item.alarm {
-    border-left-color: var(--red);
-  }
-
-  .notification-item.warning {
-    border-left-color: var(--yellow);
-  }
-
-  .notification-item.info {
-    border-left-color: var(--green);
-  }
-
-  .notification-title {
-    font-weight: 800;
-  }
-
-  .notification-message {
-    color: var(--muted);
-    font-size: 13px;
-    margin-top: 4px;
-  }
-
-  footer {
-    text-align: center;
-    color: var(--muted);
-    margin-top: 18px;
-    font-size: 12px;
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Atık İzleme Paneli</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="style.css">
 </head>
 
-<body>
-<header>
-  <h1>🗑️ Akıllı <span>Çöp Kutusu</span> Dashboard</h1>
+<body data-theme="dark">
+  <div class="app">
+    <header>
+      <div class="title">
+        <h1>Atık İzleme Paneli</h1>
+        <div class="subtitle">Doluluk ve gaz durumu</div>
+      </div>
 
-  <div class="toolbar">
-    <div class="badge">
-      <div id="status-dot" class="dot"></div>
-      <span id="connection-text">Bağlanıyor...</span>
+      <div class="toolbar">
+        <div class="badge">
+          <div id="status-dot" class="dot"></div>
+          <span id="connection-text">Bağlanıyor...</span>
+        </div>
+
+        <button id="theme-toggle" type="button">Açık Tema</button>
+        <button id="notify-btn" type="button">Bildirim</button>
+        <button id="test-btn" type="button">Test</button>
+      </div>
+    </header>
+
+    <div id="banner" class="banner">
+      Veri bekleniyor...
     </div>
 
-    <button id="notify-btn" type="button">Bildirimleri Aç</button>
-    <button id="test-btn" type="button">Test Bildirimi</button>
-    <a class="btn" href="/api/export.csv">CSV İndir</a>
+    <section class="main-grid">
+      <div class="card">
+        <div class="card-top">
+          <div class="label">Doluluk</div>
+          <div class="pill">HC-SR04</div>
+        </div>
+
+        <div id="fill-value" class="big">—</div>
+
+        <div class="bar-track">
+          <div id="fill-bar" class="bar-fill"></div>
+        </div>
+
+        <div id="distance-text" class="sub">Sensör okuması: —</div>
+        <div id="calibration-text" class="sub">Kalibrasyon: —</div>
+        <div id="fill-time" class="sub">Son kayıt: —</div>
+      </div>
+
+      <div class="card">
+        <div class="card-top">
+          <div class="label">Gaz / Koku</div>
+          <div class="pill">MQ Sensor</div>
+        </div>
+
+        <div id="gas-value" class="big">—</div>
+
+        <div class="bar-track">
+          <div id="gas-bar" class="bar-fill"></div>
+        </div>
+
+        <div id="gas-voltage-text" class="sub">Voltaj: —</div>
+        <div id="gas-do-text" class="sub">DO: —</div>
+        <div id="device-text" class="sub">Cihaz: —</div>
+      </div>
+    </section>
+
+    <section class="stats">
+      <div class="stat-box">
+        <div id="stat-count" class="stat-value">—</div>
+        <div class="stat-label">Kayıt</div>
+      </div>
+
+      <div class="stat-box">
+        <div id="stat-max" class="stat-value">—</div>
+        <div class="stat-label">Maks.</div>
+      </div>
+
+      <div class="stat-box">
+        <div id="stat-min" class="stat-value">—</div>
+        <div class="stat-label">Min.</div>
+      </div>
+
+      <div class="stat-box">
+        <div id="stat-avg" class="stat-value">—</div>
+        <div class="stat-label">Ortalama</div>
+      </div>
+
+      <div class="stat-box">
+        <div id="stat-empties" class="stat-value">—</div>
+        <div class="stat-label">Boşaltma</div>
+      </div>
+
+      <div class="stat-box">
+        <div id="stat-warnings" class="stat-value">—</div>
+        <div class="stat-label">Uyarı</div>
+      </div>
+
+      <div class="stat-box">
+        <div id="stat-alarms" class="stat-value">—</div>
+        <div class="stat-label">Alarm</div>
+      </div>
+    </section>
+
+    <section class="bottom-grid">
+      <section class="panel chart-panel">
+        <div class="section-title">Geçmiş</div>
+        <div class="chart-wrap">
+          <canvas id="history-chart"></canvas>
+        </div>
+      </section>
+
+      <div class="right-stack">
+        <section class="panel notify-panel">
+          <div class="section-title">Bildirimler</div>
+
+          <div id="notification-list" class="notification-list">
+            <div class="notification-item info">
+              <div class="notification-title">Henüz bildirim yok.</div>
+              <div class="notification-message">Yeni olaylar burada gösterilir.</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel table-panel">
+          <div class="section-title">Son Kayıtlar</div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Zaman</th>
+                  <th>Doluluk</th>
+                  <th>Gaz</th>
+                  <th>Durum</th>
+                  <th>RSSI</th>
+                </tr>
+              </thead>
+              <tbody id="history-table">
+                <tr>
+                  <td colspan="5">Veri bekleniyor...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </section>
   </div>
-</header>
 
-<div id="banner" class="banner">
-  Veri bekleniyor...
-</div>
-
-<section class="grid">
-  <div class="card">
-    <div class="label">HC-SR04 · Doluluk</div>
-    <div id="fill-value" class="big">—</div>
-
-    <div class="bar-track">
-      <div id="fill-bar" class="bar-fill"></div>
-    </div>
-
-    <div id="distance-text" class="sub">Sensör okuması: —</div>
-    <div id="calibration-text" class="sub">Kalibrasyon: —</div>
-    <div id="fill-time" class="sub">Son kayıt: —</div>
-  </div>
-
-  <div class="card">
-    <div class="label">MQ/Flying Fish · Gaz / Koku</div>
-    <div id="gas-value" class="big">—</div>
-
-    <div class="bar-track">
-      <div id="gas-bar" class="bar-fill"></div>
-    </div>
-
-    <div id="gas-voltage-text" class="sub">Voltaj: —</div>
-    <div id="gas-do-text" class="sub">DO: —</div>
-    <div id="device-text" class="sub">Cihaz: —</div>
-  </div>
-</section>
-
-<section class="stats">
-  <div class="stat-box">
-    <div id="stat-count" class="stat-value">—</div>
-    <div class="stat-label">Bugünkü Kayıt</div>
-  </div>
-
-  <div class="stat-box">
-    <div id="stat-max" class="stat-value">—</div>
-    <div class="stat-label">Maks. Doluluk</div>
-  </div>
-
-  <div class="stat-box">
-    <div id="stat-min" class="stat-value">—</div>
-    <div class="stat-label">Min. Doluluk</div>
-  </div>
-
-  <div class="stat-box">
-    <div id="stat-avg" class="stat-value">—</div>
-    <div class="stat-label">Ort. Doluluk</div>
-  </div>
-
-  <div class="stat-box">
-    <div id="stat-empties" class="stat-value">—</div>
-    <div class="stat-label">Boşaltma</div>
-  </div>
-
-  <div class="stat-box">
-    <div id="stat-warnings" class="stat-value">—</div>
-    <div class="stat-label">Uyarı</div>
-  </div>
-
-  <div class="stat-box">
-    <div id="stat-alarms" class="stat-value">—</div>
-    <div class="stat-label">Alarm</div>
-  </div>
-</section>
-
-<section class="chart-card">
-  <h2>Son Kayıtlar · Doluluk ve Gaz Değişimi</h2>
-  <canvas id="history-chart" height="120"></canvas>
-</section>
-
-<section class="notifications">
-  <h2>Bildirim Olayları</h2>
-  <div id="notification-list" class="notification-list">
-    <div class="notification-item info">
-      <div class="notification-title">Henüz bildirim yok.</div>
-      <div class="notification-message">Alarm, uyarı veya boşaltma olayı oluştuğunda burada gösterilir.</div>
-    </div>
-  </div>
-</section>
-
-<section class="chart-card">
-  <h2>Son 20 Kayıt</h2>
-
-  <table>
-    <thead>
-      <tr>
-        <th>Zaman</th>
-        <th>Cihaz</th>
-        <th>Doluluk</th>
-        <th>Gaz</th>
-        <th>DO</th>
-        <th>Durum</th>
-        <th>RSSI</th>
-      </tr>
-    </thead>
-    <tbody id="history-table">
-      <tr>
-        <td colspan="7">Veri bekleniyor...</td>
-      </tr>
-    </tbody>
-  </table>
-</section>
-
-<footer id="footer">
-  REST API bekleniyor...
-</footer>
-
-<script>
-const WARN = 70;
-const FULL = 90;
-const GAS_WARN = 400;
-const GAS_ALARM = 800;
-
-let lastNotificationId = Number(localStorage.getItem("lastNotificationId") || "0");
-
-Chart.defaults.color = "#8b949e";
-Chart.defaults.borderColor = "#30363d";
-
-const historyChart = new Chart(document.getElementById("history-chart"), {
-  type: "line",
-  data: {
-    labels: [],
-    datasets: [
-      {
-        label: "Doluluk %",
-        data: [],
-        borderColor: "#58a6ff",
-        backgroundColor: "rgba(88,166,255,0.12)",
-        fill: true,
-        tension: 0.35,
-        pointRadius: 2
-      },
-      {
-        label: "Gaz",
-        data: [],
-        borderColor: "#ffa502",
-        backgroundColor: "rgba(255,165,2,0.08)",
-        fill: false,
-        tension: 0.35,
-        pointRadius: 2
-      }
-    ]
-  },
-  options: {
-    animation: false,
-    scales: {
-      y: { beginAtZero: true },
-      x: { ticks: { maxTicksLimit: 10 } }
-    },
-    plugins: {
-      legend: { labels: { color: "#e6edf3" } }
-    }
-  }
-});
-
-function setConnection(online) {
-  const dot = document.getElementById("status-dot");
-  const text = document.getElementById("connection-text");
-
-  if (online) {
-    dot.style.background = "#2ed573";
-    dot.style.boxShadow = "0 0 8px #2ed573";
-    text.textContent = "REST API Bağlı";
-    text.style.color = "#2ed573";
-  } else {
-    dot.style.background = "#ff4757";
-    dot.style.boxShadow = "0 0 8px #ff4757";
-    text.textContent = "Bağlantı Yok";
-    text.style.color = "#ff4757";
-  }
-}
-
-function colorForStatus(status) {
-  if (status === "ALARM") return "#ff4757";
-  if (status === "WARNING") return "#ffa502";
-  return "#2ed573";
-}
-
-function updateLive(d) {
-  if (!d || !d.id) return;
-
-  const statusColor = colorForStatus(d.status);
-  const banner = document.getElementById("banner");
-
-  if (d.status === "ALARM") {
-    banner.textContent = "🔴 ALARM – Doluluk veya gaz seviyesi kritik!";
-  } else if (d.status === "WARNING") {
-    banner.textContent = "🟡 UYARI – Seviye takip edilmeli.";
-  } else {
-    banner.textContent = "🟢 Normal – Sistem güvenli aralıkta.";
-  }
-
-  banner.style.color = statusColor;
-  banner.style.borderColor = statusColor;
-
-  const fillColor =
-    d.fill >= FULL ? "#ff4757" :
-    d.fill >= WARN ? "#ffa502" :
-    "#2ed573";
-
-  document.getElementById("fill-value").textContent = d.fill + "%";
-  document.getElementById("fill-value").style.color = fillColor;
-
-  document.getElementById("fill-bar").style.width =
-    Math.max(0, Math.min(100, d.fill)) + "%";
-  document.getElementById("fill-bar").style.background = fillColor;
-
-  document.getElementById("distance-text").textContent =
-    "Sensör okuması: " + Number(d.distance).toFixed(1) + " cm";
-
-  document.getElementById("calibration-text").textContent =
-    "Kalibrasyon: boş " + Number(d.calibration_empty).toFixed(1) +
-    " cm / dolu " + Number(d.calibration_full).toFixed(1) + " cm";
-
-  document.getElementById("fill-time").textContent =
-    "Son kayıt: " + d.received_at;
-
-  const gasColor =
-    d.gas_do || d.gas >= GAS_ALARM ? "#ff4757" :
-    d.gas >= GAS_WARN ? "#ffa502" :
-    "#2ed573";
-
-  document.getElementById("gas-value").textContent = d.gas;
-  document.getElementById("gas-value").style.color = gasColor;
-
-  const gasPct = Math.min(100, Math.round((d.gas / GAS_ALARM) * 100));
-  document.getElementById("gas-bar").style.width = gasPct + "%";
-  document.getElementById("gas-bar").style.background = gasColor;
-
-  document.getElementById("gas-voltage-text").textContent =
-    "Voltaj: " + Number(d.gas_voltage).toFixed(2) + " V";
-
-  document.getElementById("gas-do-text").textContent =
-    "DO: " + (d.gas_do ? "ALARM" : "Normal");
-
-  document.getElementById("device-text").textContent =
-    "Cihaz: " + d.device_id + " · FW: " + (d.firmware || "—") + " · RSSI: " + d.rssi + " dBm";
-}
-
-function updateStats(s) {
-  if (!s || typeof s.count === "undefined") return;
-
-  document.getElementById("stat-count").textContent = s.count;
-  document.getElementById("stat-max").textContent = s.max_fill + "%";
-  document.getElementById("stat-min").textContent = s.min_fill + "%";
-  document.getElementById("stat-avg").textContent = s.avg_fill + "%";
-  document.getElementById("stat-empties").textContent = s.empties;
-  document.getElementById("stat-warnings").textContent = s.warnings;
-  document.getElementById("stat-alarms").textContent = s.alarms;
-}
-
-function updateHistory(data) {
-  if (!Array.isArray(data)) return;
-
-  const ordered = data.slice().reverse();
-
-  historyChart.data.labels = ordered.map(x => x.received_at);
-  historyChart.data.datasets[0].data = ordered.map(x => x.fill);
-  historyChart.data.datasets[1].data = ordered.map(x => x.gas);
-  historyChart.update();
-
-  const tbody = document.getElementById("history-table");
-  tbody.innerHTML = "";
-
-  data.slice(0, 20).forEach(row => {
-    const tr = document.createElement("tr");
-    const statusColor = colorForStatus(row.status);
-
-    tr.innerHTML = `
-      <td>${row.received_at}</td>
-      <td>${row.device_id || "—"}</td>
-      <td>${row.fill}%</td>
-      <td>${row.gas}</td>
-      <td>${row.gas_do ? "ALARM" : "Normal"}</td>
-      <td style="color:${statusColor};font-weight:800">${row.status}</td>
-      <td>${row.rssi ?? "—"}</td>
-    `;
-
-    tbody.appendChild(tr);
-  });
-
-  if (data.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7">Henüz kayıt yok.</td></tr>`;
-  }
-}
-
-function addNotificationToPanel(item) {
-  const list = document.getElementById("notification-list");
-
-  if (list.children.length === 1 && list.children[0].textContent.includes("Henüz bildirim yok")) {
-    list.innerHTML = "";
-  }
-
-  const div = document.createElement("div");
-  div.className = "notification-item " + item.level.toLowerCase();
-
-  div.innerHTML = `
-    <div class="notification-title">${item.level} · ${item.title}</div>
-    <div class="notification-message">${item.message}</div>
-    <div class="notification-message">${item.created_at} · kanal: ${item.channel} · gönderildi: ${item.delivered ? "evet" : "hayır"}</div>
-  `;
-
-  list.prepend(div);
-
-  while (list.children.length > 10) {
-    list.removeChild(list.lastChild);
-  }
-}
-
-function showBrowserNotification(item) {
-  if (!("Notification" in window)) return;
-  if (Notification.permission !== "granted") return;
-
-  if (item.level === "ALARM" || item.level === "WARNING" || item.level === "INFO") {
-    new Notification(item.title, {
-      body: item.message,
-      tag: "smart-trash-" + item.id
-    });
-  }
-}
-
-async function updateNotifications() {
-  const events = await fetchJson("/api/notifications?after_id=" + lastNotificationId);
-
-  if (!Array.isArray(events)) return;
-
-  for (const item of events) {
-    lastNotificationId = Math.max(lastNotificationId, Number(item.id));
-    localStorage.setItem("lastNotificationId", String(lastNotificationId));
-
-    addNotificationToPanel(item);
-    showBrowserNotification(item);
-  }
-}
-
-async function fetchJson(url, options = undefined) {
-  const response = await fetch(url, options);
-
-  if (!response.ok) {
-    throw new Error("HTTP " + response.status);
-  }
-
-  return await response.json();
-}
-
-async function refresh() {
-  try {
-    const [live, history, stats] = await Promise.all([
-      fetchJson("/api/live"),
-      fetchJson("/api/history?limit=100"),
-      fetchJson("/api/stats")
-    ]);
-
-    updateLive(live);
-    updateHistory(history);
-    updateStats(stats);
-    await updateNotifications();
-
-    setConnection(true);
-
-    document.getElementById("footer").textContent =
-      "Son yenileme: " + new Date().toLocaleString("tr-TR");
-
-  } catch (err) {
-    console.error(err);
-
-    setConnection(false);
-
-    document.getElementById("footer").textContent =
-      "REST API bağlantı hatası: " + err.message;
-  }
-}
-
-document.getElementById("notify-btn").addEventListener("click", async () => {
-  if (!("Notification" in window)) {
-    alert("Bu tarayıcı bildirimleri desteklemiyor.");
-    return;
-  }
-
-  const permission = await Notification.requestPermission();
-  alert(permission === "granted" ? "Bildirim izni verildi." : "Bildirim izni verilmedi.");
-});
-
-document.getElementById("test-btn").addEventListener("click", async () => {
-  try {
-    await fetchJson("/api/test-notification", { method: "POST" });
-    await updateNotifications();
-  } catch (err) {
-    alert("Test bildirimi oluşturulamadı: " + err.message);
-  }
-});
-
-refresh();
-setInterval(refresh, 5000);
-</script>
+  <script src="app.js"></script>
 </body>
 </html>
