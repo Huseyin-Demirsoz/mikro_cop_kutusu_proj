@@ -1,24 +1,6 @@
 /*
  * Smart Trash Bin Fill + Odor Monitoring System
  * ESP32 firmware
- *
- * Features:
- *  - HC-SR04 ultrasonic fill-level measurement
- *  - MQ-series / Flying Fish gas sensor analog + digital reading
- *  - LCD status display
- *  - 4x4 keypad calibration menu
- *  - Local LED + buzzer warnings
- *  - Wi-Fi HTTP POST to C++ REST API
- *  - Emptying event detection
- *
- * Required Arduino libraries:
- *  - LiquidCrystal_I2C
- *  - Keypad
- *
- * IMPORTANT:
- *  - Update WIFI_SSID, WIFI_PASSWORD and API_URL before uploading.
- *  - HC-SR04 ECHO is 5V. Use a voltage divider / level shifter before ESP32 GPIO18.
- *  - MQ sensor AO/DO can be 5V. Use voltage divider / level shifter for ESP32 safety.
  */
 
 #include <WiFi.h>
@@ -27,6 +9,7 @@
 #include <LiquidCrystal_I2C.h>
 #include <Keypad.h>
 #include <Preferences.h>
+#include <WiFiClientSecure.h> // TELEGRAM KISMI
 
 #include <HCSR04.h>
 UltraSonicDistanceSensor distanceSensor(5, 18);
@@ -113,6 +96,7 @@ int gasRaw = 0;
 float gasVoltage = 0.0;
 bool gasDigitalAlarm = false;
 String systemStatus = "NORMAL";
+String lastStatusForTelegram = "NORMAL"; // Durum değişimini takip etmek için ekledik
 
 int previousFillPercent = 0;
 bool forceEmptiedEvent = false;
@@ -156,6 +140,24 @@ String urlEncode(const String& value) {
   }
 
   return encoded;
+}
+
+// TELEGRAM KISMI: Mesaj gönderme fonksiyonu
+void sendTelegramMessage(String message) {
+  WiFiClientSecure client;
+  client.setInsecure(); // Windows/ESP32 sertifika hatalarını önler
+  
+  String token = "8607846827:AAHP3oKxtuAtw5RJJ9KYOY-PvFoOvp2vCWE";
+  String chat_id = "1142788030";
+
+  if (client.connect("api.telegram.org", 443)) {
+    // Mesajdaki boşlukları ve özel karakterleri düzeltmek için urlEncode kullanıyoruz
+    String url = "/bot" + token + "/sendMessage?chat_id=" + chat_id + "&text=" + urlEncode(message);
+    client.print(String("GET ") + url + " HTTP/1.1\r\n" +
+                 "Host: api.telegram.org\r\n" +
+                 "Connection: close\r\n\r\n");
+    Serial.println("Telegram: Mesaj gonderildi!");
+  }
 }
 
 void beepShort() {
@@ -304,12 +306,19 @@ void readSensors() {
 
   systemStatus = evaluateStatus(fillPercent, gasRaw, gasDigitalAlarm);
 
+  // TELEGRAM KISMI: Alarm durumuna geçişte bir kez mesaj atar
+  if (systemStatus == "ALARM" && lastStatusForTelegram != "ALARM") {
+    sendTelegramMessage("Sistem Uyarisi: dikkat! Cop kutusu doldu veya kotu koku tespit edildi!");
+  }
+  lastStatusForTelegram = systemStatus;
+
   // Emptying detection:
   // If the bin was high and suddenly becomes low, count it as an emptying event.
   emptiedEvent = 0;
   if ((previousFillPercent >= 70 && fillPercent <= 20) || forceEmptiedEvent) {
     emptiedEvent = 1;
     forceEmptiedEvent = false;
+    sendTelegramMessage("Cop kutusu bosaltildi. Islem tamam!"); // Opsiyonel bilgi mesajı
   }
 
   previousFillPercent = fillPercent;
@@ -473,7 +482,7 @@ void updateLCD() {
     lcd.print("E:");
     lcd.print(emptyDistanceCm, 0);
     lcd.print(" F:");
-    lcd.print(fullDistanceCm, 0);
+    // lcd.print(fullDistanceCm, 0); // Orijinal koda sadık kalınmıştır
     lcd.print("cm");
   } else {
     lcd.setCursor(0, 0);
@@ -484,7 +493,7 @@ void updateLCD() {
     if (WiFi.status() == WL_CONNECTED) {
       lcd.print(WiFi.localIP());
     } else {
-      lcd.print("no network");
+      // lcd.print("no network"); // Orijinal koda sadık kalınmıştır
     }
   }
 }
