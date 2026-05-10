@@ -1,7 +1,7 @@
 /*
- * Smart Trash Bin Fill + Odor Monitoring System
- * ESP32 firmware
- */
+Smart Trash Bin Fill + Odor Monitoring System
+ESP32 firmware
+*/
 
 #include <WiFi.h>
 #include <HTTPClient.h>
@@ -14,24 +14,18 @@
 #include <HCSR04.h>
 UltraSonicDistanceSensor distanceSensor(5, 18);
 
-// =========================
 // Network configuration
-// =========================
 const char* WIFI_SSID = "Galaxy S22 Ultra B12D";
 const char* WIFI_PASSWORD = "bob12345a";
 
 // Change the IP address to the PC/server running server.cpp
 const char* API_URL = "http://10.159.189.218:8080/api/trash";
 
-// =========================
 // Device configuration
-// =========================
 const char* DEVICE_ID = "trash_bin_01";
 const char* FIRMWARE_VERSION = "2.0.0";
 
-// =========================
 // Pin configuration
-// =========================
 const int TRIG_PIN = 5;
 const int ECHO_PIN = 18;
 
@@ -50,50 +44,38 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 // Keypad wiring - change if your hardware uses different pins
 const byte ROWS = 4;
 const byte COLS = 3;
-/*char keys[ROWS][COLS] = {
-  {'1','2','3','A'},
-  {'4','5','6','B'},
-  {'7','8','9','C'},
-  {'*','0','#','D'}
-};*/
+
 char keys[ROWS][COLS] = {
   {'1','2','3'},
   {'4','5','6'},
   {'7','8','9'},
   {'*','0','#'}
 };
-byte rowPins[ROWS] = {2,15, 4, 16};
-byte colPins[COLS] = {13,14,26};
+
+byte rowPins[ROWS] = {23, 19, 17, 16};
+byte colPins[COLS] = {12, 14, 13};
 Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 
-// =========================
 // Thresholds
-// =========================
 const int FILL_WARNING = 70;
 const int FILL_ALARM = 90;
-const int GAS_WARNING = 700;
+const int GAS_WARNING = 400;
 const int GAS_ALARM = 800;
 
-// =========================
 // Timing
-// =========================
 const unsigned long SENSOR_INTERVAL_MS = 1000;
 const unsigned long POST_INTERVAL_MS = 10000;
 const unsigned long LCD_INTERVAL_MS = 1000;
 const unsigned long WIFI_RETRY_INTERVAL_MS = 5000;
 
-// =========================
 // Calibration defaults
-// =========================
 // emptyDistanceCm: distance from sensor to trash when bin is empty
 // fullDistanceCm : distance from sensor to trash when bin is considered full
-float emptyDistanceCm = 35.0;
-float fullDistanceCm = 6.0;
+float emptyDistanceCm = 22.303548387097;
+float fullDistanceCm = 3.781282051282;
 int cleanGasBaseline = 0;
 
-// =========================
 // Runtime values
-// =========================
 Preferences prefs;
 
 float distanceCm = -1.0;
@@ -116,17 +98,9 @@ unsigned long lastWifiRetryMs = 0;
 byte lcdPage = 0;
 
 
-// Forward declaration
+// Prototip
 bool sendDataToServer();
 
-// =========================
-// Utility
-// =========================
-int clampInt(int value, int low, int high) {
-  if (value < low) return low;
-  if (value > high) return high;
-  return value;
-}
 
 String urlEncode(const String& value) {
   String encoded = "";
@@ -166,34 +140,8 @@ void sendTelegramMessage(String message) {
   }
 }
 
-void beepShort() {
-  tone(BUZZER_PIN, 1800, 120);
-}
 
-void beepAlarm() {
-  tone(BUZZER_PIN, 2200, 250);
-}
-
-void setLocalIndicators(const String& status) {
-  digitalWrite(LED_GREEN_PIN, status == "NORMAL" ? HIGH : LOW);
-  digitalWrite(LED_YELLOW_PIN, status == "WARNING" ? HIGH : LOW);
-  digitalWrite(LED_RED_PIN, status == "ALARM" ? HIGH : LOW);
-
-  static unsigned long lastBeep = 0;
-  unsigned long now = millis();
-
-  if (status == "ALARM" && now - lastBeep > 2000) {
-    beepAlarm();
-    lastBeep = now;
-  } else if (status == "WARNING" && now - lastBeep > 5000) {
-    beepShort();
-    lastBeep = now;
-  }
-}
-
-// =========================
 // Wi-Fi
-// =========================
 void connectWiFi() {
   if (WiFi.status() == WL_CONNECTED) return;
 
@@ -218,18 +166,10 @@ void connectWiFi() {
 }
 
 void ensureWiFi() {
-  if (WiFi.status() == WL_CONNECTED) return;
-
-  unsigned long now = millis();
-  if (now - lastWifiRetryMs >= WIFI_RETRY_INTERVAL_MS) {
-    lastWifiRetryMs = now;
-    connectWiFi();
-  }
+  
 }
 
-// =========================
 // Sensor reading
-// =========================
 float readUltrasonicDistanceOnce() {
   digitalWrite(TRIG_PIN, LOW);
   delayMicroseconds(3);
@@ -258,7 +198,7 @@ float readUltrasonicDistanceAverage(byte sampleCount = 5) {
     total += d;
     valid++;
 
-    delay(400);
+    delay(40);
   }
 
   if (valid == 0) {
@@ -279,37 +219,29 @@ int readGasAverage(byte sampleCount = 10) {
   return total / sampleCount;
 }
 
-bool readGasDigitalAlarm() {
-  int value = digitalRead(MQ_DO_PIN);
-
-  if (MQ_DO_ACTIVE_LOW) {
-    return value == LOW;
-  }
-
-  return value == HIGH;
-}
-
-String evaluateStatus(int fill, int gas, bool gasDo) {
-  if (fill >= FILL_ALARM || gas >= GAS_ALARM || gasDo) {
-    return "ALARM";
-  }
-
-  if (fill >= FILL_WARNING || gas >= GAS_WARNING) {
-    return "WARNING";
-  }
-
-  return "NORMAL";
-}
 
 void readSensors() {
   distanceCm = readUltrasonicDistanceAverage();
-  fillPercent = (1-((distanceCm-5.5)/17.5))*100;
+  fillPercent = (1-((distanceCm-fullDistanceCm)/(emptyDistanceCm-fullDistanceCm)))*100;
+  Serial.printf("Full: %f\n",fullDistanceCm);
+  Serial.printf("Empty:%f\n",emptyDistanceCm);
+  Serial.printf("Dist: %f\n",distanceCm);
+
 
   gasRaw = readGasAverage();
   gasVoltage = (gasRaw / 4095.0) * 3.3;
-  gasDigitalAlarm = readGasDigitalAlarm();
-
-  systemStatus = evaluateStatus(fillPercent, gasRaw, gasDigitalAlarm);
+  {
+    bool value = (bool)digitalRead(MQ_DO_PIN);
+    gasDigitalAlarm = value^MQ_DO_ACTIVE_LOW;
+  }
+  systemStatus = "NORMAL";
+  if (fillPercent >= FILL_WARNING || gasRaw >= GAS_WARNING) {
+    systemStatus = "WARNING";
+  }
+  if (fillPercent >= FILL_ALARM || gasRaw >= GAS_ALARM || gasDigitalAlarm) {
+    systemStatus = "ALARM";
+  }
+  
 
   // TELEGRAM KISMI: Alarm durumuna geçişte bir kez mesaj atar
   if (systemStatus == "ALARM" && lastStatusForTelegram != "ALARM") {
@@ -328,7 +260,20 @@ void readSensors() {
 
   previousFillPercent = fillPercent;
 
-  setLocalIndicators(systemStatus);
+  digitalWrite(LED_GREEN_PIN, systemStatus == "NORMAL" ? HIGH : LOW);
+  digitalWrite(LED_YELLOW_PIN, systemStatus == "WARNING" ? HIGH : LOW);
+  digitalWrite(LED_RED_PIN, systemStatus == "ALARM" ? HIGH : LOW);
+
+  static unsigned long lastBeep = 0;
+  unsigned long now = millis();
+
+  if (systemStatus == "ALARM" && now - lastBeep > 2000) {
+    tone(BUZZER_PIN, 2200, 250);
+    lastBeep = now;
+  } else if (systemStatus == "WARNING" && now - lastBeep > 5000) {
+    tone(BUZZER_PIN, 1800, 120);
+    lastBeep = now;
+  }
 
   Serial.printf(
     "Distance=%.1f cm | Fill=%d%% | Gas=%d | Voltage=%.2f | DO=%d | Status=%s | Emptied=%d\n",
@@ -342,33 +287,6 @@ void readSensors() {
   );
 }
 
-// =========================
-// Calibration
-// =========================
-void loadCalibration() {
-  prefs.begin("trashcal", false);
-
-  emptyDistanceCm = prefs.getFloat("emptyCm", 35.0);
-  fullDistanceCm = prefs.getFloat("fullCm", 6.0);
-  cleanGasBaseline = prefs.getInt("cleanGas", 0);
-
-  prefs.end();
-
-  if (emptyDistanceCm <= fullDistanceCm) {
-    emptyDistanceCm = 35.0;
-    fullDistanceCm = 6.0;
-  }
-}
-
-void saveCalibration() {
-  prefs.begin("trashcal", false);
-
-  prefs.putFloat("emptyCm", emptyDistanceCm);
-  prefs.putFloat("fullCm", fullDistanceCm);
-  prefs.putInt("cleanGas", cleanGasBaseline);
-
-  prefs.end();
-}
 
 void showMessage(const String& line1, const String& line2, unsigned long holdMs = 1200) {
   lcd.clear();
@@ -379,64 +297,31 @@ void showMessage(const String& line1, const String& line2, unsigned long holdMs 
   delay(holdMs);
 }
 
-void calibrateEmptyDistance() {
-  showMessage("Calibrating", "Empty distance", 900);
-
-  float measured = readUltrasonicDistanceAverage(10);
-  if (measured > 0) {
-    emptyDistanceCm = measured;
-    saveCalibration();
-    showMessage("Empty saved", String(emptyDistanceCm, 1) + " cm", 1500);
-  } else {
-    showMessage("Sensor error", "Empty not saved", 1500);
-  }
-}
-
-void calibrateFullDistance() {
-  showMessage("Calibrating", "Full distance", 900);
-
-  float measured = readUltrasonicDistanceAverage(10);
-  if (measured > 0 && measured < emptyDistanceCm) {
-    fullDistanceCm = measured;
-    saveCalibration();
-    showMessage("Full saved", String(fullDistanceCm, 1) + " cm", 1500);
-  } else {
-    showMessage("Invalid value", "Full not saved", 1500);
-  }
-}
-
-void calibrateCleanGas() {
-  showMessage("Calibrating", "Clean air gas", 900);
-
-  cleanGasBaseline = readGasAverage(25);
-  saveCalibration();
-
-  showMessage("Gas baseline", String(cleanGasBaseline), 1500);
-}
-
-// =========================
-// Keypad
-// =========================
+// Keypad ve Kalibrasyon
 void handleKeypad() {
   char key = keypad.getKey();
   if (!key) return;
 
-  beepShort();
+  tone(BUZZER_PIN, 1800, 120);
 
   switch (key) {
-    case 'A':
-      calibrateEmptyDistance();
+    case '1':
+      emptyDistanceCm = readUltrasonicDistanceAverage(10);
       break;
 
-    case 'B':
-      calibrateFullDistance();
+    case '2':
+      fullDistanceCm = readUltrasonicDistanceAverage(10);
       break;
 
-    case 'C':
-      calibrateCleanGas();
+    case '3':
+      showMessage("Calibrating", "Clean air gas", 900);
+      cleanGasBaseline = readGasAverage(25);
+      showMessage("Gas baseline", String(cleanGasBaseline), 1500);
+      
+      showMessage("Manual upload", "Request sent", 1000);
       break;
 
-    case 'D':
+    case '4':
       forceEmptiedEvent = true;
       showMessage("Manual event", "Emptied=1", 1200);
       break;
@@ -446,9 +331,7 @@ void handleKeypad() {
       break;
 
     case '*':
-      //sendDataToServer();
-      calibrateCleanGas();
-      showMessage("Manual upload", "Request sent", 1000);
+      sendDataToServer();
       break;
 
     default:
@@ -456,9 +339,7 @@ void handleKeypad() {
   }
 }
 
-// =========================
 // LCD
-// =========================
 void updateLCD() {
   lcd.clear();
 
@@ -504,9 +385,7 @@ void updateLCD() {
   }
 }
 
-// =========================
 // HTTP upload
-// =========================
 bool sendDataToServer() {
   if (WiFi.status() != WL_CONNECTED) {
     Serial.println("Upload skipped: Wi-Fi offline.");
@@ -547,9 +426,7 @@ bool sendDataToServer() {
   return httpCode >= 200 && httpCode < 300;
 }
 
-// =========================
 // Setup / Loop
-// =========================
 void setup() {
   Serial.begin(115200);
 
@@ -572,7 +449,7 @@ void setup() {
   lcd.init();
   lcd.backlight();
 
-  loadCalibration();
+  //loadCalibration();
 
   showMessage("Smart Trash Bin", "Starting...", 1000);
 
@@ -584,10 +461,14 @@ void setup() {
 }
 
 void loop() {
-  ensureWiFi();
-  handleKeypad();
-
   unsigned long now = millis();
+  if (WiFi.status() != WL_CONNECTED){
+    if (now - lastWifiRetryMs >= WIFI_RETRY_INTERVAL_MS) {
+      lastWifiRetryMs = now;
+      connectWiFi();
+    }
+  }
+  handleKeypad();
 
   if (now - lastSensorMs >= SENSOR_INTERVAL_MS) {
     lastSensorMs = now;
