@@ -1,1 +1,3 @@
 [Çrş 29 Nis 2026 21:53:43 +03]  -  - 
+[Pzt 11.05.2026  2:42:30,78] ALARM - Smart Trash Bin Alarm - Device trash_bin_01 reached a critical level. Fill: 95%, Gas: 900, Digital gas alarm: 1. 
+[Pzt 11.05.2026  2:42:43,57] WARNING - Smart Trash Bin Warning - Device trash_bin_01 should be monitored. Fill: 75%, Gas: 500. 
