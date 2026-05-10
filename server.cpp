@@ -432,7 +432,6 @@ std::string rowToJson(sqlite3_stmt* stmt) {
 
     return json.str();
 }
-/*
 std::string get_local_ip(){
 	struct ifaddrs *myaddrs, *ifa;
 	void *in_addr;
@@ -480,7 +479,6 @@ std::string get_local_ip(){
 	freeifaddrs(myaddrs);
 	return ip;
 }
-*/
 std::string getLiveJson() {
     std::lock_guard<std::mutex> lock(dbMutex);
 
@@ -984,22 +982,22 @@ int main() {
 
         res.set_content("{\"message\":\"created\",\"id\":" + std::to_string(id) + "}", "application/json");
     });
-
+    
     server.Get("/api/export.csv", [&](const httplib::Request&, httplib::Response& res) {
         setCors(res);
         res.set_header("Content-Disposition", "attachment; filename=\"trash_data_export.csv\"");
         res.set_content(getCsvExport(), "text/csv; charset=utf-8");
     });
-
+    
     std::cout << "Smart Trash Bin server is running." << std::endl;
     std::cout << "Dashboard : http://localhost:" << SERVER_PORT << "/" << std::endl;
     std::cout << "Live API  : http://localhost:" << SERVER_PORT << "/api/live" << std::endl;
     std::cout << "History   : http://localhost:" << SERVER_PORT << "/api/history?limit=100" << std::endl;
     std::cout << "Stats     : http://localhost:" << SERVER_PORT << "/api/stats" << std::endl;
     std::cout << "Export    : http://localhost:" << SERVER_PORT << "/api/export.csv" << std::endl;
-    //std::string ip = get_local_ip();
-    //std::cout << ip <<"\n";
-    server.listen("0.0.0.0", SERVER_PORT);
-
+    std::string ip = get_local_ip();
+    std::cout << ip <<"\n";
+    server.listen(ip, SERVER_PORT);
+    
     return 0;
 }

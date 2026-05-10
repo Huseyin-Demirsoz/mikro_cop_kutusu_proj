@@ -17,11 +17,11 @@ UltraSonicDistanceSensor distanceSensor(5, 18);
 // =========================
 // Network configuration
 // =========================
-const char* WIFI_SSID = "readme note on iki puro";
-const char* WIFI_PASSWORD = "jonganma";
+const char* WIFI_SSID = "Galaxy S22 Ultra B12D";
+const char* WIFI_PASSWORD = "bob12345a";
 
 // Change the IP address to the PC/server running server.cpp
-const char* API_URL = "http://10.200.132.232:8080/api/trash";
+const char* API_URL = "http://10.159.189.218:8080/api/trash";
 
 // =========================
 // Device configuration
@@ -49,15 +49,21 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 // Keypad wiring - change if your hardware uses different pins
 const byte ROWS = 4;
-const byte COLS = 4;
-char keys[ROWS][COLS] = {
+const byte COLS = 3;
+/*char keys[ROWS][COLS] = {
   {'1','2','3','A'},
   {'4','5','6','B'},
   {'7','8','9','C'},
   {'*','0','#','D'}
+};*/
+char keys[ROWS][COLS] = {
+  {'1','2','3'},
+  {'4','5','6'},
+  {'7','8','9'},
+  {'*','0','#'}
 };
-byte rowPins[ROWS] = {4, 16, 17, 19};
-byte colPins[COLS] = {23, 13, 12, 14};
+byte rowPins[ROWS] = {2,15, 4, 16};
+byte colPins[COLS] = {13,14,26};
 Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 
 // =========================
@@ -65,7 +71,7 @@ Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 // =========================
 const int FILL_WARNING = 70;
 const int FILL_ALARM = 90;
-const int GAS_WARNING = 400;
+const int GAS_WARNING = 700;
 const int GAS_ALARM = 800;
 
 // =========================
@@ -192,11 +198,10 @@ void connectWiFi() {
   if (WiFi.status() == WL_CONNECTED) return;
 
   Serial.print("Connecting to Wi-Fi: ");
-  Serial.println(WIFI_SSID);
+  //Serial.println(WIFI_SSID);
 
-  WiFi.mode(WIFI_STA);
+  //WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-
   unsigned long start = millis();
   while (WiFi.status() != WL_CONNECTED && millis() - start < 12000) {
     delay(300);
@@ -441,7 +446,8 @@ void handleKeypad() {
       break;
 
     case '*':
-      sendDataToServer();
+      //sendDataToServer();
+      calibrateCleanGas();
       showMessage("Manual upload", "Request sent", 1000);
       break;
 
@@ -569,6 +575,7 @@ void setup() {
   loadCalibration();
 
   showMessage("Smart Trash Bin", "Starting...", 1000);
+
   connectWiFi();
 
   readSensors();
@@ -578,7 +585,7 @@ void setup() {
 
 void loop() {
   ensureWiFi();
-  //handleKeypad();
+  handleKeypad();
 
   unsigned long now = millis();
 
