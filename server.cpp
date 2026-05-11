@@ -396,13 +396,13 @@ void handleNotificationIfNeeded(
 #endif
         // hook'un düzgün olduğuna bakıyor
         std::ifstream f(hook);
-        if (f.good()) {
+        if (!f.good()) {
             return;
         }
         
         std::string cmd = hook + " " + shellQuote(level) + " " + shellQuote(title) + " " + shellQuote(message);
         int rc = std::system(cmd.c_str());
-        insertNotificationEvent(level, title, message, "external_hook", rc ? 1 : 0);
+        insertNotificationEvent(level, title, message, "external_hook", rc == 0 ? 1 : 0);
     }
 }
 
@@ -434,6 +434,11 @@ std::string rowToJson(sqlite3_stmt* stmt) {
 }
 
 std::string get_local_ip(){
+#ifdef _WIN32
+    // On Windows, getifaddrs is not available. 
+    // Returning 0.0.0.0 binds to all available interfaces, which is usually desired.
+    return "0.0.0.0";
+#else
 	struct ifaddrs *myaddrs, *ifa;
 	void *in_addr;
 	char buf[64];
@@ -479,6 +484,7 @@ std::string get_local_ip(){
 
 	freeifaddrs(myaddrs);
 	return ip;
+#endif
 }
 
 std::string getLiveJson() {
