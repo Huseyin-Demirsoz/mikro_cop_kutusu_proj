@@ -397,7 +397,7 @@ void handleNotificationIfNeeded(
         // hook'un düzgün olduğuna bakıyor
         std::ifstream f(hook);
         if (f.good()) {
-            return false;
+            return;
         }
         
         std::string cmd = hook + " " + shellQuote(level) + " " + shellQuote(title) + " " + shellQuote(message);
@@ -432,6 +432,7 @@ std::string rowToJson(sqlite3_stmt* stmt) {
 
     return json.str();
 }
+
 std::string get_local_ip(){
 	struct ifaddrs *myaddrs, *ifa;
 	void *in_addr;
@@ -479,6 +480,7 @@ std::string get_local_ip(){
 	freeifaddrs(myaddrs);
 	return ip;
 }
+
 std::string getLiveJson() {
     std::lock_guard<std::mutex> lock(dbMutex);
 
@@ -997,7 +999,7 @@ int main() {
     std::cout << "Export    : http://localhost:" << SERVER_PORT << "/api/export.csv" << std::endl;
     std::string ip = get_local_ip();
     std::cout << ip <<"\n";
-    server.listen(ip, SERVER_PORT);
+    server.listen("0.0.0.0", SERVER_PORT);
     
     return 0;
 }

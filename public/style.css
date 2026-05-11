@@ -96,7 +96,7 @@ body[data-theme="light"] {
   --accent: #1E7052;
   --green: #1E7052;
   --yellow: #A06B1A;
-  --red: #B83535;
+  --red: #aca3a3;
   --blue: #2B5FA6;
 
   --chart-fill-1: rgba(30, 112, 82, 0.12);
@@ -280,13 +280,13 @@ body[data-theme="dark"] button {
 
 body[data-theme="light"] .badge,
 body[data-theme="light"] button {
-  background: rgba(186, 43, 43, 0.92);
+  background: rgba(255, 121, 206, 0.92);
   border-color: rgba(20,16,12,0.10);
   box-shadow:
     0 0 0 1px rgba(20,16,12,0.05),
     0 1px 3px rgba(20,16,12,0.06),
     0 4px 12px rgba(20,16,12,0.05);
-  color: #17120E;
+  color: #232323;
   letter-spacing: -0.01em;
 }
 

@@ -11,19 +11,22 @@ ESP32 firmware
 #include <Preferences.h>
 #include <WiFiClientSecure.h> // TELEGRAM KISMI
 
-#include <HCSR04.h>
-UltraSonicDistanceSensor distanceSensor(5, 18);
 
 // Network configuration
 const char* WIFI_SSID = "Galaxy S22 Ultra B12D";
 const char* WIFI_PASSWORD = "bob12345a";
+//const char* WIFI_SSID = "readme note on iki puro";
+//const char* WIFI_PASSWORD = "jonganma";
 
 // Change the IP address to the PC/server running server.cpp
-const char* API_URL = "http://10.159.189.218:8080/api/trash";
+const char* API_URL = "http://10.99.101.218:8080/api/trash";
 
 // Device configuration
 const char* DEVICE_ID = "trash_bin_01";
 const char* FIRMWARE_VERSION = "2.0.0";
+
+//USED PINS
+//5,18,34,32,25,26,27,33,21,22,23,19,17,16,12,13
 
 // Pin configuration
 const int TRIG_PIN = 5;
@@ -64,7 +67,7 @@ const int GAS_ALARM = 800;
 
 // Timing
 const unsigned long SENSOR_INTERVAL_MS = 1000;
-const unsigned long POST_INTERVAL_MS = 10000;
+const unsigned long POST_INTERVAL_MS = 5000;
 const unsigned long LCD_INTERVAL_MS = 1000;
 const unsigned long WIFI_RETRY_INTERVAL_MS = 5000;
 
@@ -172,10 +175,10 @@ void ensureWiFi() {
 // Sensor reading
 float readUltrasonicDistanceOnce() {
   digitalWrite(TRIG_PIN, LOW);
-  delayMicroseconds(3);
+  delayMicroseconds(5);
 
   digitalWrite(TRIG_PIN, HIGH);
-  delayMicroseconds(10);
+  delayMicroseconds(18);
   digitalWrite(TRIG_PIN, LOW);
 
   // Timeout 30 ms ~= 5 meters, enough for trash bin
@@ -194,7 +197,7 @@ float readUltrasonicDistanceAverage(byte sampleCount = 5) {
   int valid = 0;
 
   for (byte i = 0; i < sampleCount; i++) {
-    float d = distanceSensor.measureDistanceCm();
+    float d = readUltrasonicDistanceOnce();
     total += d;
     valid++;
 
@@ -448,9 +451,7 @@ void setup() {
   Wire.begin(21, 22);
   lcd.init();
   lcd.backlight();
-
-  //loadCalibration();
-
+  
   showMessage("Smart Trash Bin", "Starting...", 1000);
 
   connectWiFi();
