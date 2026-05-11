@@ -167,7 +167,6 @@ http://PC_IP_ADRESI:8080/api/trash
 | `GET /api/stats` | Günlük istatistikleri döndürür |
 | `GET /api/notifications?after_id=0` | Bildirim olaylarını döndürür |
 | `POST /api/test-notification` | Test bildirimi üretir |
-| `GET /api/export.csv` | Verileri CSV olarak indirir |
 | `GET /health` | Server durumunu kontrol eder |
 
 ---
